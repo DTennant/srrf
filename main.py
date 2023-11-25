@@ -79,6 +79,7 @@ parser.add_argument('--bs', type=int, default=256)
 parser.add_argument('--num_workers', type=int, default=2)
 parser.add_argument('--seed', type=int, default=2023)
 parser.add_argument('--nfolds', type=int, default=6)
+parser.add_argument('--ep', type=int, default=32)
 
 parser.add_argument('--use_fastai', type=str2bool, default='True')
 parser.add_argument('--add_noise', action='store_true')
@@ -142,7 +143,7 @@ if args.run_test:
         preds = torch.concat(preds)
         df = pd.DataFrame({'id':ids.numpy(), 'reactivity_DMS_MaP':preds[:,1].numpy(), 
                    'reactivity_2A3_MaP':preds[:,0].numpy()})
-        df.to_csv(os.path.join(OUT, f'{fname}_{m.split("/")[-1].split(".")[0]}.csv'), index=False, float_format='%.4f')
+        df.to_parquet(os.path.join(OUT, f'{fname}_{m.split("/")[-1].split(".")[0]}.parquet'), index=False, float_format='%.4f')
     exit(0)
 
 for fold in range(nfolds): # running multiple folds at kaggle may cause OOM
@@ -187,7 +188,7 @@ for fold in range(nfolds): # running multiple folds at kaggle may cause OOM
             learn = Learner(data, model, loss_func=loss,cbs=cbs,
                         metrics=[MAE()]).to_fp16() 
 
-        learn.fit_one_cycle(32, lr_max=5e-4, wd=0.05, pct_start=0.02)
+        learn.fit_one_cycle(args.ep, lr_max=5e-4, wd=0.05, pct_start=0.02)
         torch.save(learn.model.state_dict(),os.path.join(OUT,f'{fname}_{fold}.pth'))
         gc.collect()
 
