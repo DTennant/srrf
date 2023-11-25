@@ -137,7 +137,7 @@ if args.run_test:
                 pred = torch.nan_to_num(model(x)).clip(0, 1)
             for idx, mask, pi in zip(y['ids'].cpu(), x['mask'].cpu(), pred):
                 ids.append(idx[mask])
-                preds.append(pi[mask[:pi.shape[0]]].cpu().numpy())
+                preds.append(pi[mask[:pi.shape[0]]].cpu())
         ids = torch.concat(ids)
         preds = torch.concat(preds)
         df = pd.DataFrame({'id':ids.numpy(), 'reactivity_DMS_MaP':preds[:,1].numpy(), 
