@@ -66,8 +66,9 @@ from utils import seed_everything, MAE
 # 2. try augmentation with random applied error -- done
 # 3. try augmentation with reverse sequence
 # 4. try augmentation with random mask
-# 5. pretrain with noise
-# 6. try bert model
+# 5. pretrain with noise -- done
+# 6. try bert model -- done
+# 7. try data with struct
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -97,6 +98,7 @@ parser.add_argument('--use_bert', action='store_true')
 parser.add_argument('--num_bert_layers', type=int, default=2)
 
 parser.add_argument('--pretrain', action='store_true')
+parser.add_argument('--use_pretrain', action='store_true')
 parser.add_argument('--pretrain_path', type=str, default='output/baseline-larger/')
 
 parser.add_argument('--run_test', action='store_true')
@@ -143,7 +145,7 @@ if args.run_test:
         preds = torch.concat(preds)
         df = pd.DataFrame({'id':ids.numpy(), 'reactivity_DMS_MaP':preds[:,1].numpy(), 
                    'reactivity_2A3_MaP':preds[:,0].numpy()})
-        df.to_parquet(os.path.join(OUT, f'{fname}_{m.split("/")[-1].split(".")[0]}.parquet'), index=False, float_format='%.4f')
+        df.to_parquet(os.path.join(OUT, f'{fname}_{m.split("/")[-1].split(".")[0]}.parquet'), index=False)
     exit(0)
 
 for fold in range(nfolds): # running multiple folds at kaggle may cause OOM
@@ -173,6 +175,9 @@ for fold in range(nfolds): # running multiple folds at kaggle may cause OOM
         model = RNA_Model(dim=args.dim, depth=args.depth)   
     else:
         model = RNA_Bert_Model(dim=args.dim, depth=args.depth, num_bert_layers=args.num_bert_layers)
+        
+    if args.use_pretrain:
+        model.load_state_dict(torch.load(os.path.join(args.pretrain_path, f'{fname}_{fold}.pth')))
     model = model.to(device)
 
     if args.use_fastai:
